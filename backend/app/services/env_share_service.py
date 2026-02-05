@@ -16,6 +16,8 @@ from app.db.models import EnvVariable, Environment
 from app.models.env_share import EnvShare
 from app.schemas.env_share import EnvShareCreate, EnvVarForShare
 from app.audit.service import log_audit
+from app.environments.service import get_environment_by_id
+from app.projects.service import check_project_access
 
 
 def _generate_unique_token(db: Session) -> str:
@@ -79,6 +81,39 @@ def create_env_share(
     )
 
     return share, share_url
+
+
+def list_env_shares(db: Session, environment_id: int, user_id: int) -> List[EnvShare]:
+    """
+    List all share links for an environment. User must have access to the environment's project.
+    """
+    environment = get_environment_by_id(db, environment_id)
+    check_project_access(db, environment.project_id, user_id)
+    return db.query(EnvShare).filter(EnvShare.environment_id == environment_id).order_by(EnvShare.created_at.desc()).all()
+
+
+def revoke_env_share(db: Session, share_id: int, user_id: int) -> None:
+    """
+    Revoke a share link (set is_active=False). User must have access to the share's environment.
+    """
+    share = db.query(EnvShare).filter(EnvShare.id == share_id).first()
+    if not share:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Share link not found",
+        )
+    environment = get_environment_by_id(db, share.environment_id)
+    check_project_access(db, environment.project_id, user_id)
+    share.is_active = False
+    db.commit()
+    log_audit(
+        db=db,
+        user_id=user_id,
+        action="revoke",
+        resource="env_share",
+        resource_id=share_id,
+        details=f"Revoked share link for environment {share.environment_id}",
+    )
 
 
 def _is_expired(share: EnvShare) -> bool:

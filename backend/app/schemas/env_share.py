@@ -61,3 +61,25 @@ class EnvShareViewResponse(BaseModel):
     variables: list[EnvVarForShare]
 
 
+class EnvShareRecord(BaseModel):
+    """
+    Response model for a share link in the list (no password_hash).
+    """
+
+    id: int
+    environment_id: int
+    token: str
+    expires_at: Optional[datetime]
+    max_views: int
+    max_downloads: int
+    view_count: int
+    download_count: int
+    one_time: bool
+    is_active: bool
+    whitelisted_ips: Optional[List[str]]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+

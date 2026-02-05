@@ -11,6 +11,7 @@ from app.users.dependencies import get_current_user
 from app.schemas.env_share import (
     EnvShareAccessRequest,
     EnvShareCreate,
+    EnvShareRecord,
     EnvShareResponse,
     EnvShareViewResponse,
 )
@@ -18,6 +19,8 @@ from app.services.env_share_service import (
     access_share_download,
     access_share_view,
     create_env_share,
+    list_env_shares,
+    revoke_env_share,
 )
 
 router = APIRouter(tags=["env_share"])
@@ -53,6 +56,37 @@ def create_share_link(
         one_time=share.one_time,
         whitelisted_ips=share.whitelisted_ips,
     )
+
+
+@router.get(
+    "/env/{environment_id}/shares",
+    response_model=list[EnvShareRecord],
+)
+def list_share_links(
+    environment_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    List all share links for an environment.
+    """
+    shares = list_env_shares(db=db, environment_id=environment_id, user_id=current_user.id)
+    return shares
+
+
+@router.delete(
+    "/share/{share_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def revoke_share_link(
+    share_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Revoke a share link (deactivate it).
+    """
+    revoke_env_share(db=db, share_id=share_id, user_id=current_user.id)
 
 
 @router.post(
