@@ -10,6 +10,7 @@ import CreateShareModal from '@/components/share/CreateShareModal';
 import ShareLinksTable from '@/components/share/ShareLinksTable';
 import { environmentsApi, envVarsApi, envShareApi } from '@/lib/api';
 import type { EnvShareRecord, EnvShareResponse } from '@/types/share';
+import { apiErrorToMessage } from '@/utils/apiError';
 
 interface Environment {
   id: number;
@@ -40,12 +41,18 @@ export default function EnvironmentsPage() {
   const [error, setError] = useState('');
   const [showEnvModal, setShowEnvModal] = useState(false);
   const [showCreateEnvModal, setShowCreateEnvModal] = useState(false);
+  const [showEditEnvModal, setShowEditEnvModal] = useState(false);
+  const [editingEnvironment, setEditingEnvironment] = useState<Environment | null>(null);
+  const [editEnvName, setEditEnvName] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
   const [newEnvName, setNewEnvName] = useState('');
   const [activeTab, setActiveTab] = useState<'variables' | 'share'>('variables');
   const [shareLinks, setShareLinks] = useState<EnvShareRecord[]>([]);
   const [loadingShares, setLoadingShares] = useState(false);
   const [shareError, setShareError] = useState('');
+  const [envToDelete, setEnvToDelete] = useState<Environment | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     fetchEnvironments();
@@ -68,7 +75,7 @@ export default function EnvironmentsPage() {
         setSelectedEnvironment(response.data[0].id);
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load environments');
+      setError(apiErrorToMessage(err.response?.data?.detail, 'Failed to load environments'));
     } finally {
       setLoading(false);
     }
@@ -91,8 +98,10 @@ export default function EnvironmentsPage() {
       setShareLinks(response.data ?? response);
     } catch (err: any) {
       setShareError(
-        err?.response?.data?.detail ||
+        apiErrorToMessage(
+          err?.response?.data?.detail,
           'Failed to load share links for this environment'
+        )
       );
     } finally {
       setLoadingShares(false);
@@ -110,6 +119,53 @@ export default function EnvironmentsPage() {
       fetchEnvironments();
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Failed to create environment');
+    }
+  };
+
+  const openEditEnvModal = (env: Environment) => {
+    setEditingEnvironment(env);
+    setEditEnvName(env.name);
+    setShowEditEnvModal(true);
+  };
+
+  const handleUpdateEnvironment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEnvironment || !editEnvName.trim()) return;
+
+    try {
+      await environmentsApi.update(editingEnvironment.id, { name: editEnvName.trim() });
+      setShowEditEnvModal(false);
+      setEditingEnvironment(null);
+      setEditEnvName('');
+      fetchEnvironments();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to update environment');
+    }
+  };
+
+  const openDeleteConfirm = (env: Environment) => {
+    setEnvToDelete(env);
+    setDeleteError('');
+  };
+
+  const handleConfirmDeleteEnvironment = async () => {
+    if (!envToDelete) return;
+    try {
+      setDeleting(true);
+      setDeleteError('');
+      await environmentsApi.delete(envToDelete.id);
+      if (selectedEnvironment === envToDelete.id) {
+        const remaining = environments.filter((e) => e.id !== envToDelete.id);
+        setSelectedEnvironment(remaining.length > 0 ? remaining[0].id : null);
+      }
+      setEnvToDelete(null);
+      fetchEnvironments();
+    } catch (err: any) {
+      setDeleteError(
+        apiErrorToMessage(err.response?.data?.detail, 'Failed to delete environment')
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -147,7 +203,7 @@ export default function EnvironmentsPage() {
       }
     } catch (err: any) {
       setShareError(
-        err?.response?.data?.detail || 'Failed to revoke share link'
+        apiErrorToMessage(err?.response?.data?.detail, 'Failed to revoke share link')
       );
     }
   };
@@ -212,6 +268,120 @@ export default function EnvironmentsPage() {
               </div>
             )}
 
+            {showEditEnvModal && editingEnvironment && (
+              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Environment</h3>
+                  <form onSubmit={handleUpdateEnvironment}>
+                    <input
+                      type="text"
+                      value={editEnvName}
+                      onChange={(e) => setEditEnvName(e.target.value)}
+                      placeholder="Environment name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded mb-4"
+                      required
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowEditEnvModal(false);
+                          setEditingEnvironment(null);
+                          setEditEnvName('');
+                        }}
+                        className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {envToDelete && (
+              <div className="fixed inset-0 z-50 overflow-y-auto">
+                <div
+                  className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+                  aria-hidden="true"
+                  onClick={() => {
+                    if (!deleting) {
+                      setEnvToDelete(null);
+                      setDeleteError('');
+                    }
+                  }}
+                />
+                <div className="flex min-h-full items-center justify-center p-4">
+                  <div
+                    className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="p-6 sm:p-8">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="mx-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-red-100">
+                          <svg
+                            className="h-7 w-7 text-red-600"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                            />
+                          </svg>
+                        </div>
+                        <h3 className="mt-4 text-xl font-semibold text-gray-900">
+                          Delete environment
+                        </h3>
+                        <p className="mt-2 text-sm text-gray-500">
+                          Delete environment <strong className="text-gray-700">"{envToDelete.name}"</strong>?
+                          All variables in this environment will be removed. This cannot be undone.
+                        </p>
+                        {deleteError && (
+                          <p className="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg w-full">
+                            {deleteError}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col-reverse gap-3 bg-gray-50 px-6 py-4 sm:flex-row sm:justify-end sm:px-8">
+                      <button
+                        type="button"
+                        disabled={deleting}
+                        onClick={() => {
+                          if (!deleting) {
+                            setEnvToDelete(null);
+                            setDeleteError('');
+                          }
+                        }}
+                        className="inline-flex w-full justify-center rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 sm:w-auto"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deleting}
+                        onClick={handleConfirmDeleteEnvironment}
+                        className="inline-flex w-full justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 sm:w-auto"
+                      >
+                        {deleting ? 'Deleting…' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="text-center py-12">Loading environments...</div>
             ) : error ? (
@@ -221,19 +391,50 @@ export default function EnvironmentsPage() {
             ) : (
               <>
                 <div className="mb-6">
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     {environments.map((env) => (
-                      <button
+                      <div
                         key={env.id}
-                        onClick={() => setSelectedEnvironment(env.id)}
-                        className={`px-4 py-2 rounded ${
+                        className={`inline-flex items-center gap-1 rounded ${
                           selectedEnvironment === env.id
                             ? 'bg-blue-500 text-white'
                             : 'bg-white text-gray-700 hover:bg-gray-100'
                         }`}
                       >
-                        {env.name}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedEnvironment(env.id)}
+                          className="px-4 py-2 text-left font-medium"
+                        >
+                          {env.name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditEnvModal(env);
+                          }}
+                          className={`p-2 rounded hover:bg-black/10 ${
+                            selectedEnvironment === env.id ? 'text-white' : 'text-gray-600'
+                          }`}
+                          title="Edit environment"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteConfirm(env);
+                          }}
+                          className={`p-2 rounded hover:bg-red-500/20 ${
+                            selectedEnvironment === env.id ? 'text-white' : 'text-red-600'
+                          }`}
+                          title="Delete environment"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { envShareApi } from '@/lib/api';
 import type { EnvShareCreatePayload, EnvShareResponse } from '@/types/share';
+import { apiErrorToMessage } from '@/utils/apiError';
 import { parseIpList, validateIpList } from '@/utils/validators';
 
 interface CreateShareModalProps {
@@ -69,10 +70,12 @@ export default function CreateShareModal({
         onCreated(response.data ?? response);
       }
     } catch (error: any) {
-      const message =
-        error?.response?.data?.detail ||
-        'Failed to create share link. Please try again.';
-      setApiError(message);
+      setApiError(
+        apiErrorToMessage(
+          error?.response?.data?.detail,
+          'Failed to create share link. Please try again.'
+        )
+      );
     } finally {
       setLoading(false);
     }

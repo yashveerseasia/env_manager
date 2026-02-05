@@ -7,6 +7,10 @@ class ProjectCreate(BaseModel):
     name: str
 
 
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+
+
 class ProjectResponse(BaseModel):
     id: int
     name: str

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from app.db.models import Project, ProjectMember, Role
-from app.projects.schemas import ProjectCreate
+from app.db.models import Project, ProjectMember, Role, Environment
+from app.models.env_share import EnvShare
+from app.projects.schemas import ProjectCreate, ProjectUpdate
 from fastapi import HTTPException, status
 
 
@@ -52,4 +53,37 @@ def check_project_access(db: Session, project_id: int, user_id: int) -> ProjectM
         )
     
     return membership
+
+
+def update_project(db: Session, project_id: int, user_id: int, data: ProjectUpdate) -> Project:
+    """Update a project. Only OWNER or ADMIN can update."""
+    project = get_project_by_id(db, project_id)
+    membership = check_project_access(db, project_id, user_id)
+    if membership.role not in (Role.OWNER, Role.ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only project owner or admin can update the project",
+        )
+    if data.name is not None:
+        project.name = data.name
+    db.commit()
+    db.refresh(project)
+    return project
+
+
+def delete_project(db: Session, project_id: int, user_id: int) -> None:
+    """Delete a project. Only OWNER can delete."""
+    project = get_project_by_id(db, project_id)
+    membership = check_project_access(db, project_id, user_id)
+    if membership.role != Role.OWNER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only project owner can delete the project",
+        )
+    # Remove share links for all environments in this project (FK constraint)
+    env_ids = [r[0] for r in db.query(Environment.id).filter(Environment.project_id == project_id).all()]
+    if env_ids:
+        db.query(EnvShare).filter(EnvShare.environment_id.in_(env_ids)).delete(synchronize_session=False)
+    db.delete(project)
+    db.commit()
 

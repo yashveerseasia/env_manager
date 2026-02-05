@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from app.db.models import Environment
+from app.models.env_share import EnvShare
 from app.projects.service import check_project_access
+from app.environments.schemas import EnvironmentUpdate
 from fastapi import HTTPException, status
 
 
@@ -36,4 +38,28 @@ def get_environment_by_id(db: Session, environment_id: int) -> Environment:
             detail="Environment not found"
         )
     return environment
+
+
+def update_environment(db: Session, environment_id: int, user_id: int, data: EnvironmentUpdate) -> Environment:
+    """Update an environment. User must have access to the project."""
+    environment = get_environment_by_id(db, environment_id)
+    check_project_access(db, environment.project_id, user_id)
+    if data.name is not None:
+        environment.name = data.name
+    if data.project_id is not None:
+        check_project_access(db, data.project_id, user_id)
+        environment.project_id = data.project_id
+    db.commit()
+    db.refresh(environment)
+    return environment
+
+
+def delete_environment(db: Session, environment_id: int, user_id: int) -> None:
+    """Delete an environment. User must have access to the project."""
+    environment = get_environment_by_id(db, environment_id)
+    check_project_access(db, environment.project_id, user_id)
+    # Remove share links that reference this environment (FK constraint)
+    db.query(EnvShare).filter(EnvShare.environment_id == environment_id).delete()
+    db.delete(environment)
+    db.commit()
 

@@ -58,6 +58,9 @@ export const authApi = {
 export const projectsApi = {
   getAll: () => api.get('/projects'),
   create: (name: string) => api.post('/projects', { name }),
+  update: (projectId: number, name: string) =>
+    api.put(`/projects/${projectId}`, { name }),
+  delete: (projectId: number) => api.delete(`/projects/${projectId}`),
 };
 
 // Environments endpoints
@@ -65,6 +68,9 @@ export const environmentsApi = {
   getByProject: (projectId: number) => api.get(`/environments/${projectId}`),
   create: (name: string, projectId: number) =>
     api.post('/environments', { name, project_id: projectId }),
+  update: (environmentId: number, data: { name?: string; project_id?: number }) =>
+    api.put(`/environments/${environmentId}`, data),
+  delete: (environmentId: number) => api.delete(`/environments/${environmentId}`),
 };
 
 // Env variables endpoints
