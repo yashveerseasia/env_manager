@@ -5,6 +5,7 @@ from app.auth.router import router as auth_router
 from app.projects.router import router as projects_router
 from app.environments.router import router as environments_router
 from app.env_vars.router import router as env_vars_router
+from app.routers.env_share import router as env_share_router
 
 app = FastAPI(
     title="ENV Configuration Manager",
@@ -26,6 +27,7 @@ app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(environments_router)
 app.include_router(env_vars_router)
+app.include_router(env_share_router)
 
 
 @app.get("/")

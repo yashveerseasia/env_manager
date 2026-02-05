@@ -1,7 +1,14 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import type {
+  EnvShareCreatePayload,
+  EnvShareResponse,
+  EnvShareRecord,
+  EnvShareViewResponse,
+} from '@/types/share';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -73,6 +80,19 @@ export const envVarsApi = {
   delete: (id: number) => api.delete(`/env/${id}`),
   download: (environmentId: number) =>
     api.get(`/env/download/${environmentId}`, { responseType: 'blob' }),
+};
+
+// Share / Env share endpoints
+export const envShareApi = {
+  create: (environmentId: number, payload: EnvShareCreatePayload) =>
+    api.post<EnvShareResponse>(`/env/${environmentId}/share`, payload),
+  list: (environmentId: number) =>
+    api.get<EnvShareRecord[]>(`/env/${environmentId}/shares`),
+  revoke: (shareId: number) => api.delete(`/share/${shareId}`),
+  view: (token: string, password: string) =>
+    api.post<EnvShareViewResponse>(`/share/${token}/view`, { password }),
+  download: (token: string, password: string) =>
+    api.post(`/share/${token}/download`, { password }, { responseType: 'blob' }),
 };
 
 export default api;
