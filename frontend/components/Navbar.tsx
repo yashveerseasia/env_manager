@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { logout } from '@/lib/auth';
+import Logo from '@/components/Logo';
 
 export default function Navbar() {
   return (
@@ -10,8 +11,8 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/dashboard" className="text-xl font-bold text-gray-800">
-                ENV Manager
+              <Link href="/dashboard" className="flex items-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded">
+                <Logo width={176} height={38} className="h-9 w-auto" />
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

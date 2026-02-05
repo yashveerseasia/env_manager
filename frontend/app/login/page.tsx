@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { login, register } from '@/lib/auth';
+import Logo from '@/components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,7 +38,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
+        <div className="flex flex-col items-center">
+          <Logo width={220} height={48} className="h-12 w-auto" />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             {isLogin ? 'Sign in to your account' : 'Create a new account'}
           </h2>
