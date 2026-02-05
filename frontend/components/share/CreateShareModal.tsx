@@ -136,7 +136,7 @@ export default function CreateShareModal({
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               required
             />
           </div>
@@ -149,7 +149,7 @@ export default function CreateShareModal({
               type="datetime-local"
               value={expiresAt}
               onChange={(e) => setExpiresAt(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
@@ -163,7 +163,7 @@ export default function CreateShareModal({
                 min={0}
                 value={maxViews}
                 onChange={(e) => setMaxViews(Number(e.target.value) || 0)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <p className="mt-1 text-xs text-gray-500">
                 0 means unlimited views (until expired or revoked).
@@ -178,7 +178,7 @@ export default function CreateShareModal({
                 min={0}
                 value={maxDownloads}
                 onChange={(e) => setMaxDownloads(Number(e.target.value) || 0)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <p className="mt-1 text-xs text-gray-500">
                 0 means unlimited downloads (not recommended).
@@ -191,7 +191,7 @@ export default function CreateShareModal({
               type="button"
               onClick={() => setOneTime((prev) => !prev)}
               className={`inline-flex h-6 w-11 items-center rounded-full p-0.5 transition ${
-                oneTime ? 'bg-indigo-600' : 'bg-gray-300'
+                oneTime ? 'bg-blue-600' : 'bg-gray-300'
               }`}
             >
               <span
@@ -217,7 +217,7 @@ export default function CreateShareModal({
             <textarea
               value={whitelistedIpsText}
               onChange={(e) => setWhitelistedIpsText(e.target.value)}
-              className="h-24 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="h-24 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="One IPv4 address per line"
             />
             {ipError && (
@@ -246,7 +246,7 @@ export default function CreateShareModal({
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
             >
               {loading ? 'Creating…' : 'Create Share Link'}
             </button>

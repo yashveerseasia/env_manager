@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Navbar from '@/components/Navbar';
 import EnvTable from '@/components/EnvTable';
 import EnvModal from '@/components/EnvModal';
 import CreateShareModal from '@/components/share/CreateShareModal';
 import ShareLinksTable from '@/components/share/ShareLinksTable';
-import { environmentsApi, envVarsApi, envShareApi } from '@/lib/api';
+import Link from 'next/link';
+import { projectsApi, environmentsApi, envVarsApi, envShareApi } from '@/lib/api';
 import type { EnvShareRecord, EnvShareResponse } from '@/types/share';
 import { apiErrorToMessage } from '@/utils/apiError';
 
@@ -31,7 +32,7 @@ interface EnvVariable {
 
 export default function EnvironmentsPage() {
   const params = useParams();
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const projectId = parseInt(params?.projectId as string);
 
   const [environments, setEnvironments] = useState<Environment[]>([]);
@@ -54,9 +55,22 @@ export default function EnvironmentsPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [openEnvDropdownId, setOpenEnvDropdownId] = useState<number | null>(null);
+  const [projectName, setProjectName] = useState('');
 
   useEffect(() => {
     fetchEnvironments();
+  }, [projectId]);
+
+  useEffect(() => {
+    if (Number.isNaN(projectId)) return;
+    projectsApi
+      .getAll()
+      .then((r) => {
+        const list = r.data ?? [];
+        const p = list.find((x: { id: number }) => x.id === projectId);
+        setProjectName(p ? p.name : '');
+      })
+      .catch(() => setProjectName(''));
   }, [projectId]);
 
   useEffect(() => {
@@ -71,9 +85,13 @@ export default function EnvironmentsPage() {
   const fetchEnvironments = async () => {
     try {
       const response = await environmentsApi.getByProject(projectId);
-      setEnvironments(response.data);
-      if (response.data.length > 0 && !selectedEnvironment) {
-        setSelectedEnvironment(response.data[0].id);
+      const envList = response.data ?? [];
+      setEnvironments(envList);
+      const envIdFromUrl = searchParams?.get('env');
+      const envId = envIdFromUrl ? parseInt(envIdFromUrl, 10) : null;
+      const envExists = envId != null && envList.some((e: Environment) => e.id === envId);
+      if (envList.length > 0) {
+        setSelectedEnvironment(envExists ? envId : envList[0].id);
       }
     } catch (err: any) {
       setError(apiErrorToMessage(err.response?.data?.detail, 'Failed to load environments'));
@@ -215,23 +233,29 @@ export default function EnvironmentsPage() {
         <Navbar />
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
-            <div className="mb-6">
-              <button
-                onClick={() => router.push('/projects')}
-                className="text-blue-600 hover:text-blue-800 mb-4"
+            <nav className="mb-6 flex items-center gap-2 text-sm text-gray-500">
+              <Link href="/projects" className="hover:text-gray-700">
+                Projects
+              </Link>
+              <span aria-hidden>/</span>
+              <Link
+                href={`/projects/${projectId}`}
+                className="hover:text-gray-700"
               >
-                ← Back to Projects
-              </button>
-              <div className="flex justify-between items-center">
+                {projectName || '...'}
+              </Link>
+              <span aria-hidden>/</span>
+              <span className="font-medium text-gray-900">Environments</span>
+            </nav>
+            <div className="mb-6 flex justify-between items-center">
                 <h1 className="text-3xl font-bold text-gray-900">Environments</h1>
                 <button
                   onClick={() => setShowCreateEnvModal(true)}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 >
                   Create Environment
                 </button>
               </div>
-            </div>
 
             {showCreateEnvModal && (
               <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -259,7 +283,7 @@ export default function EnvironmentsPage() {
                       </button>
                       <button
                         type="submit"
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                       >
                         Create
                       </button>
@@ -296,7 +320,7 @@ export default function EnvironmentsPage() {
                       </button>
                       <button
                         type="submit"
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                       >
                         Save
                       </button>
@@ -398,7 +422,7 @@ export default function EnvironmentsPage() {
                         key={env.id}
                         className={`inline-flex items-center gap-0 rounded ${
                           selectedEnvironment === env.id
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-blue-600 text-white'
                             : 'bg-white text-gray-700 hover:bg-gray-100'
                         }`}
                       >
@@ -484,7 +508,7 @@ export default function EnvironmentsPage() {
                           onClick={() => setActiveTab('variables')}
                           className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
                             activeTab === 'variables'
-                              ? 'border-blue-500 text-blue-600'
+                              ? 'border-blue-600 text-blue-600'
                               : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                           }`}
                         >
@@ -495,7 +519,7 @@ export default function EnvironmentsPage() {
                           onClick={() => setActiveTab('share')}
                           className={`whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium ${
                             activeTab === 'share'
-                              ? 'border-blue-500 text-blue-600'
+                              ? 'border-blue-600 text-blue-600'
                               : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                           }`}
                         >
@@ -532,7 +556,7 @@ export default function EnvironmentsPage() {
                           <button
                             type="button"
                             onClick={() => setShowShareModal(true)}
-                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                           >
                             New Share Link
                           </button>

@@ -120,7 +120,7 @@ export default function ProjectsPage() {
               <h1 className="text-3xl font-bold text-gray-900">Projects</h1>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               >
                 Create Project
               </button>
@@ -152,7 +152,7 @@ export default function ProjectsPage() {
                       </button>
                       <button
                         type="submit"
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                       >
                         Create
                       </button>
@@ -189,7 +189,7 @@ export default function ProjectsPage() {
                       </button>
                       <button
                         type="submit"
-                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                       >
                         Save
                       </button>
@@ -372,7 +372,7 @@ export default function ProjectsPage() {
                     <div className="mt-4 flex flex-wrap gap-2">
                       <Link
                         href={`/environments/${project.id}`}
-                        className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                        className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
                       >
                         Manage environments
                       </Link>
