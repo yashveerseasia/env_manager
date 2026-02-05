@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { envShareApi } from '@/lib/api';
 import type { EnvShareCreatePayload, EnvShareResponse } from '@/types/share';
 import { apiErrorToMessage } from '@/utils/apiError';
@@ -31,8 +31,30 @@ export default function CreateShareModal({
   const [createdShare, setCreatedShare] = useState<EnvShareResponse | null>(
     null,
   );
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (createdShare && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [createdShare]);
 
   if (!isOpen) return null;
+
+  const handleCreateAnother = () => {
+    setCreatedShare(null);
+    setPassword('');
+    setExpiresAt('');
+    setMaxViews(5);
+    setMaxDownloads(1);
+    setOneTime(false);
+    setWhitelistedIpsText('');
+    setIpError(null);
+    setApiError(null);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +143,47 @@ export default function CreateShareModal({
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+        {createdShare ? (
+          <>
+            <div className="rounded-lg border-2 border-green-300 bg-green-50 p-4 shadow-sm">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-200">
+                  <svg className="h-5 w-5 text-green-700" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+                <h3 className="text-base font-semibold text-green-900">
+                  Share link created
+                </h3>
+              </div>
+              <p className="mb-3 text-sm text-green-800">
+                Copy the link below and share it with the password you set. Anyone with the link and password can view the environment variables.
+              </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <code className="min-w-0 flex-1 break-all rounded bg-white px-3 py-2 text-sm text-gray-800 ring-1 ring-green-200">
+                  {getFullShareUrl()}
+                </code>
+                <button
+                  type="button"
+                  onClick={handleCopyUrl}
+                  className="shrink-0 rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
+                >
+                  Copy link
+                </button>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-green-800">
+                <span>{createdShare.expires_at ? `Expires: ${new Date(createdShare.expires_at).toLocaleString()}` : 'No expiry'}</span>
+                <span>Views: {createdShare.max_views} · Downloads: {createdShare.max_downloads}</span>
+                <span>One-time: {createdShare.one_time ? 'Yes' : 'No'}</span>
+              </div>
+            </div>
+            <p className="mt-4 text-sm text-gray-500">
+              You can create another share link below or close to finish.
+            </p>
+            <hr className="my-4 border-gray-200" />
+          </>
+        ) : null}
         <p className="mb-4 text-sm text-yellow-700">
           Share links expose decrypted environment values to anyone with the
           link and password. Use strong passwords and short expirations. One-time
@@ -236,56 +298,45 @@ export default function CreateShareModal({
             </div>
           )}
         </form>
-
-        {createdShare && (
-          <div className="mt-6 rounded-md border border-green-200 bg-green-50 p-4">
-            <h3 className="mb-2 text-sm font-semibold text-green-900">
-              Share Link Created
-            </h3>
-            <div className="mb-2 flex items-center gap-2">
-              <code className="block flex-1 break-all rounded bg-white px-2 py-1 text-xs text-gray-800">
-                {getFullShareUrl()}
-              </code>
-              <button
-                type="button"
-                onClick={handleCopyUrl}
-                className="whitespace-nowrap rounded-md border border-green-600 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-600 hover:text-white"
-              >
-                Copy
-              </button>
-            </div>
-            <p className="text-xs text-gray-700">
-              {createdShare.expires_at
-                ? `Expires at: ${new Date(
-                    createdShare.expires_at,
-                  ).toLocaleString()}`
-                : 'No explicit expiry (link may still be revoked).'}
-            </p>
-            <p className="text-xs text-gray-700">
-              Max views: {createdShare.max_views} · Max downloads:{' '}
-              {createdShare.max_downloads} · One-time:{' '}
-              {createdShare.one_time ? 'Yes' : 'No'}
-            </p>
-          </div>
-        )}
         </div>
 
         <div className="shrink-0 flex items-center justify-between gap-2 border-t border-gray-200 bg-gray-50 px-6 py-4 rounded-b-lg">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            form="create-share-form"
-            disabled={loading}
-            className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-          >
-            {loading ? 'Creating…' : 'Create Share Link'}
-          </button>
+          {createdShare ? (
+            <>
+              <button
+                type="button"
+                onClick={handleCreateAnother}
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Create another
+              </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+              >
+                Done
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="create-share-form"
+                disabled={loading}
+                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+              >
+                {loading ? 'Creating…' : 'Create Share Link'}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
