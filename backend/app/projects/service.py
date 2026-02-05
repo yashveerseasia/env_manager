@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.db.models import Project, ProjectMember, Role, Environment
 from app.models.env_share import EnvShare
 from app.projects.schemas import ProjectCreate, ProjectUpdate
@@ -6,8 +7,27 @@ from fastapi import HTTPException, status
 
 
 def create_project(db: Session, name: str, owner_id: int) -> Project:
-    """Create a new project"""
-    project = Project(name=name, owner_id=owner_id)
+    """Create a new project. Project name must be unique per user (owner)."""
+    name_normalized = name.strip() if name else ""
+    if not name_normalized:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Project name is required",
+        )
+    existing = (
+        db.query(Project)
+        .filter(
+            Project.owner_id == owner_id,
+            func.lower(Project.name) == name_normalized.lower(),
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You already have a project with this name.",
+        )
+    project = Project(name=name_normalized, owner_id=owner_id)
     db.add(project)
     db.commit()
     db.refresh(project)
@@ -65,7 +85,27 @@ def update_project(db: Session, project_id: int, user_id: int, data: ProjectUpda
             detail="Only project owner or admin can update the project",
         )
     if data.name is not None:
-        project.name = data.name
+        name_normalized = data.name.strip() if data.name else ""
+        if not name_normalized:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Project name cannot be empty",
+            )
+        existing = (
+            db.query(Project)
+            .filter(
+                Project.owner_id == project.owner_id,
+                func.lower(Project.name) == name_normalized.lower(),
+                Project.id != project_id,
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You already have a project with this name.",
+            )
+        project.name = name_normalized
     db.commit()
     db.refresh(project)
     return project

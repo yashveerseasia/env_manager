@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { projectsApi, environmentsApi, envVarsApi, envShareApi } from '@/lib/api';
 import type { EnvShareRecord, EnvShareResponse } from '@/types/share';
 import { apiErrorToMessage } from '@/utils/apiError';
+import AlertModal from '@/components/AlertModal';
 
 interface Environment {
   id: number;
@@ -56,6 +57,8 @@ export default function EnvironmentsPage() {
   const [deleteError, setDeleteError] = useState('');
   const [openEnvDropdownId, setOpenEnvDropdownId] = useState<number | null>(null);
   const [projectName, setProjectName] = useState('');
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
 
   useEffect(() => {
     fetchEnvironments();
@@ -137,7 +140,8 @@ export default function EnvironmentsPage() {
       setShowCreateEnvModal(false);
       fetchEnvironments();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to create environment');
+      setAlertMessage(apiErrorToMessage(err.response?.data?.detail, 'Failed to create environment'));
+      setAlertOpen(true);
     }
   };
 
@@ -158,7 +162,8 @@ export default function EnvironmentsPage() {
       setEditEnvName('');
       fetchEnvironments();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to update environment');
+      setAlertMessage(apiErrorToMessage(err.response?.data?.detail, 'Failed to update environment'));
+      setAlertOpen(true);
     }
   };
 
@@ -195,7 +200,8 @@ export default function EnvironmentsPage() {
       await envVarsApi.create(key, value, isSecret, selectedEnvironment);
       fetchEnvVars(selectedEnvironment);
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to add environment variable');
+      setAlertMessage(apiErrorToMessage(err.response?.data?.detail, 'Failed to add environment variable'));
+      setAlertOpen(true);
     }
   };
 
@@ -543,6 +549,10 @@ export default function EnvironmentsPage() {
                           envVars={envVars}
                           onRefresh={() => fetchEnvVars(selectedEnvironment)}
                           canEdit={true}
+                          onError={(message) => {
+                            setAlertMessage(message);
+                            setAlertOpen(true);
+                          }}
                         />
                       </>
                     )}
@@ -592,6 +602,13 @@ export default function EnvironmentsPage() {
               onSubmit={handleAddEnvVar}
             />
 
+            <AlertModal
+              open={alertOpen}
+              title="Validation error"
+              message={alertMessage}
+              onClose={() => setAlertOpen(false)}
+              variant="error"
+            />
             {selectedEnvironment && (
               <CreateShareModal
                 environmentId={selectedEnvironment}

@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import { projectsApi, environmentsApi } from '@/lib/api';
 import Link from 'next/link';
 import { apiErrorToMessage } from '@/utils/apiError';
+import AlertModal from '@/components/AlertModal';
 
 interface Project {
   id: number;
@@ -31,6 +32,8 @@ export default function ProjectsPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [openProjectDropdownId, setOpenProjectDropdownId] = useState<number | null>(null);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
 
   useEffect(() => {
     fetchProjects();
@@ -63,7 +66,8 @@ export default function ProjectsPage() {
       setShowCreateModal(false);
       fetchProjects();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to create project');
+      setAlertMessage(apiErrorToMessage(err.response?.data?.detail, 'Failed to create project'));
+      setAlertOpen(true);
     }
   };
 
@@ -84,7 +88,8 @@ export default function ProjectsPage() {
       setEditName('');
       fetchProjects();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to update project');
+      setAlertMessage(apiErrorToMessage(err.response?.data?.detail, 'Failed to update project'));
+      setAlertOpen(true);
     }
   };
 
@@ -402,6 +407,14 @@ export default function ProjectsPage() {
           </div>
         </div>
       </div>
+
+      <AlertModal
+        open={alertOpen}
+        title="Validation error"
+        message={alertMessage}
+        onClose={() => setAlertOpen(false)}
+        variant="error"
+      />
     </ProtectedRoute>
   );
 }

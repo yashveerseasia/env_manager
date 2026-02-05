@@ -18,9 +18,14 @@ interface EnvTableProps {
   envVars: EnvVariable[];
   onRefresh: () => void;
   canEdit: boolean;
+  onError?: (message: string) => void;
 }
 
-export default function EnvTable({ environmentId, envVars, onRefresh, canEdit }: EnvTableProps) {
+export default function EnvTable({ environmentId, envVars, onRefresh, canEdit, onError }: EnvTableProps) {
+  const showError = (message: string) => {
+    if (onError) onError(message);
+    else alert(message);
+  };
   const [revealedSecrets, setRevealedSecrets] = useState<Set<number>>(new Set());
   const [revealedValues, setRevealedValues] = useState<Map<number, string>>(new Map());
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -35,7 +40,7 @@ export default function EnvTable({ environmentId, envVars, onRefresh, canEdit }:
       setRevealedValues(new Map([...revealedValues, [id, response.data.value]]));
     } catch (error) {
       console.error('Failed to reveal secret:', error);
-      alert('Failed to reveal secret. You may not have permission.');
+      showError('Failed to reveal secret. You may not have permission.');
     }
   };
 
@@ -66,7 +71,7 @@ export default function EnvTable({ environmentId, envVars, onRefresh, canEdit }:
       cancelEdit();
     } catch (error) {
       console.error('Failed to update env var:', error);
-      alert('Failed to update environment variable');
+      showError('Failed to update environment variable');
     }
   };
 
@@ -80,7 +85,7 @@ export default function EnvTable({ environmentId, envVars, onRefresh, canEdit }:
       onRefresh();
     } catch (error) {
       console.error('Failed to delete env var:', error);
-      alert('Failed to delete environment variable');
+      showError('Failed to delete environment variable');
     }
   };
 
@@ -98,7 +103,7 @@ export default function EnvTable({ environmentId, envVars, onRefresh, canEdit }:
       document.body.removeChild(a);
     } catch (error) {
       console.error('Failed to download env file:', error);
-      alert('Failed to download environment file');
+      showError('Failed to download environment file');
     }
   };
 
