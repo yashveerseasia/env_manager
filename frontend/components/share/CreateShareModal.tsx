@@ -106,9 +106,9 @@ export default function CreateShareModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
+      <div className="my-auto w-full max-w-lg max-h-[calc(100vh-2rem)] flex flex-col rounded-lg bg-white shadow-xl">
+        <div className="shrink-0 flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 className="text-xl font-semibold text-gray-900">
             Create Share Link
           </h2>
@@ -121,13 +121,14 @@ export default function CreateShareModal({
           </button>
         </div>
 
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
         <p className="mb-4 text-sm text-yellow-700">
           Share links expose decrypted environment values to anyone with the
           link and password. Use strong passwords and short expirations. One-time
           and low limits are recommended for sensitive environments.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form id="create-share-form" onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Password
@@ -234,23 +235,6 @@ export default function CreateShareModal({
               {apiError}
             </div>
           )}
-
-          <div className="mt-4 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-            >
-              {loading ? 'Creating…' : 'Create Share Link'}
-            </button>
-          </div>
         </form>
 
         {createdShare && (
@@ -284,6 +268,25 @@ export default function CreateShareModal({
             </p>
           </div>
         )}
+        </div>
+
+        <div className="shrink-0 flex items-center justify-between gap-2 border-t border-gray-200 bg-gray-50 px-6 py-4 rounded-b-lg">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="create-share-form"
+            disabled={loading}
+            className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+          >
+            {loading ? 'Creating…' : 'Create Share Link'}
+          </button>
+        </div>
       </div>
     </div>
   );
